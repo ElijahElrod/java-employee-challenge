@@ -4,7 +4,6 @@ import com.reliaquest.api.constants.CacheNames;
 import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.EmployeeResponse;
 
-import org.checkerframework.checker.units.qual.C;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,10 +18,10 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
@@ -65,8 +64,8 @@ class EmployeeServiceTest {
         List<EmployeeResponse> secondCall = employeeService.getAllEmployees();
         List<EmployeeResponse> thirdCall = employeeService.getAllEmployees();
 
-        assertThat(firstCall).isEqualTo(secondCall);
-        assertThat(secondCall).isEqualTo(thirdCall);
+        Assertions.assertEquals(firstCall, secondCall);
+        Assertions.assertEquals(secondCall, thirdCall);
 
         // Verify client called only once because of caching
         verify(employeeClient, times(1)).getAllEmployees();
@@ -99,25 +98,65 @@ class EmployeeServiceTest {
         final var createdEmployee = employeeService.createEmployee(createEmployeeRequest);
         final var fetchedEmployee = employeeService.getEmployeeById(TEST_UUID_STR);
 
-        outputCaffeineCacheKeys(CacheNames.EMPLOYEE_BY_ID, cacheManager);
-
 
         Assertions.assertEquals(createdEmployee, fetchedEmployee);
         verify(employeeClient, times(1)).getEmployeeById(TEST_UUID_STR);
         verifyCaffeineCacheKey(CacheNames.EMPLOYEE_BY_ID, TEST_UUID_STR, cacheManager);
     }
 
-    private void outputCaffeineCacheKeys(String cacheName, CacheManager cacheManager) {
-        Cache springCache = cacheManager.getCache(cacheName);
-        if (springCache instanceof CaffeineCache caffeineCache) {
-            com.github.benmanes.caffeine.cache.Cache<Object, Object> nativeCaffeineCache =
-                    (com.github.benmanes.caffeine.cache.Cache<Object, Object>) caffeineCache.getNativeCache();
-
-            System.out.println("Keys in cache '" + cacheName + "':");
-            nativeCaffeineCache.asMap().keySet().forEach(key -> System.out.println("- " + key));
-        } else {
-            System.out.println("Cache '" + cacheName + "' is not a CaffeineCache.");
+    @Test
+    void testGetTopTenEarningEmployees() {
+        // given
+        List<EmployeeResponse> employees = new ArrayList<>();
+        for (int i = 1; i <= 20; i++) {
+            EmployeeResponse emp = new EmployeeResponse();
+            emp.setId(UUID.randomUUID());
+            emp.setName("Employee" + i);
+            emp.setSalary(i * 1000); // Employee1=1000, Employee20=20000
+            emp.setAge(20 + i);
+            emp.setTitle("Title" + i);
+            emp.setEmail("employee" + i + "@example.com");
+            employees.add(emp);
         }
+
+        when(employeeClient.getAllEmployees()).thenReturn(employees);
+        final List<String> topEarners = employeeService.getTopTenHighestEarningEmployeeNames();
+
+
+        Assertions.assertEquals(10, topEarners.size());
+        Assertions.assertEquals(List.of("Employee20",
+                "Employee19",
+                "Employee18",
+                "Employee17",
+                "Employee16",
+                "Employee15",
+                "Employee14",
+                "Employee13",
+                "Employee12",
+                "Employee11"), topEarners);
+
+
+    }
+
+    @Test
+    void testGetHighestSalary() {
+        // given
+        List<EmployeeResponse> employees = new ArrayList<>();
+        for (int i = 1; i <= 20; i++) {
+            EmployeeResponse emp = new EmployeeResponse();
+            emp.setId(UUID.randomUUID());
+            emp.setName("Employee" + i);
+            emp.setSalary(i * 1000); // Employee1=1000, Employee20=20000
+            emp.setAge(20 + i);
+            emp.setTitle("Title" + i);
+            emp.setEmail("employee" + i + "@example.com");
+            employees.add(emp);
+        }
+
+        when(employeeClient.getAllEmployees()).thenReturn(employees);
+        final int topSalary = employeeService.getHighestSalaryOfEmployees();
+
+        Assertions.assertEquals(20_000, topSalary);
     }
 
     private void verifyCaffeineCacheKey(String cacheName, String cacheKey, CacheManager cacheManager) {

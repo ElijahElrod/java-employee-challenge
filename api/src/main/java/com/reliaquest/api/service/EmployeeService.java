@@ -111,7 +111,7 @@ public class EmployeeService {
     public List<String> getTopTenHighestEarningEmployeeNames() {
 
         List<EmployeeResponse> employees = this.getAllEmployees();
-        return employees.stream().sorted(Comparator.comparingInt(EmployeeResponse::getSalary)).map(EmployeeResponse::getName).limit(TEN).collect(Collectors.toList());
+        return employees.stream().sorted(Comparator.comparingInt(EmployeeResponse::getSalary).reversed()).map(EmployeeResponse::getName).limit(TEN).collect(Collectors.toList());
     }
 
 
