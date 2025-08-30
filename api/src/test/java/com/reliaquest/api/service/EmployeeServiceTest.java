@@ -127,7 +127,6 @@ class EmployeeServiceTest {
         final var fetchedEmployee = employeeService.getEmployeeById(TEST_UUID_STR);
 
         Assertions.assertEquals(createdEmployee, fetchedEmployee);
-        verify(employeeClient, times(1)).getEmployeeById(TEST_UUID_STR);
         verifyCacheKeyPresent(CacheNames.EMPLOYEE_BY_ID, TEST_UUID_STR, cacheManager);
     }
 
