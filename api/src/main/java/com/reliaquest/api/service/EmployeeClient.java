@@ -17,7 +17,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -69,7 +69,7 @@ public class EmployeeClient {
             }
 
             return responseBody.data();
-        } catch (final RestClientResponseException exception) {
+        } catch (final RestClientException exception) {
             log.error(exception.getMessage(), exception);
             return Collections.emptyList();
         }
@@ -98,7 +98,7 @@ public class EmployeeClient {
             }
 
             return responseBody.data().get(FIRST);
-        } catch (final RestClientResponseException exception) {
+        } catch (final RestClientException exception) {
             log.error(exception.getMessage(), exception);
             return EmployeeResponse.BLANK;
         }
@@ -127,7 +127,7 @@ public class EmployeeClient {
             }
 
             return responseBody.data().get(FIRST);
-        } catch (final RestClientResponseException exception) {
+        } catch (final RestClientException exception) {
             log.error(exception.getMessage(), exception);
             return EmployeeResponse.BLANK;
         }
@@ -157,7 +157,7 @@ public class EmployeeClient {
             }
             return responseBody.data();
 
-        } catch (final RestClientResponseException exception) {
+        } catch (final RestClientException exception) {
             log.error(exception.getMessage(), exception);
             return false;
         }

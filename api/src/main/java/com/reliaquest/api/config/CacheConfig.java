@@ -36,13 +36,13 @@ import org.springframework.context.annotation.Configuration;
 @EnableCaching
 public class CacheConfig {
 
-    private static final int EXPIRY_S = 5;
+    private static final int EXPIRY_M = 5;
     private static final int INITIAL_CAPACITY = 100;
 
     @Bean
     public Caffeine caffeineConfig() {
         return Caffeine.newBuilder()
-                .expireAfterWrite(EXPIRY_S, TimeUnit.SECONDS)
+                .expireAfterWrite(EXPIRY_M, TimeUnit.MINUTES)
                 .initialCapacity(INITIAL_CAPACITY);
     }
 

@@ -3,6 +3,7 @@ package com.reliaquest.api.service;
 import com.reliaquest.api.constants.CacheNames;
 import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.EmployeeResponse;
+import com.reliaquest.api.util.UuidValidator;
 import jakarta.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,6 +95,10 @@ public class EmployeeService {
      */
     @Cacheable(value = CacheNames.EMPLOYEE_BY_ID, key = "#id")
     public EmployeeResponse getEmployeeById(String id) {
+
+        if (!UuidValidator.isValidUuid(id)) {
+            return EmployeeResponse.BLANK;
+        }
 
         return this.employeeClient.getEmployeeById(id);
     }

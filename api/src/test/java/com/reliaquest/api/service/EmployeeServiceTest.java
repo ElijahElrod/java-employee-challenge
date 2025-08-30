@@ -5,11 +5,9 @@ import static org.mockito.Mockito.*;
 import com.reliaquest.api.constants.CacheNames;
 import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.EmployeeResponse;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +49,12 @@ class EmployeeServiceTest {
     public void init() {
         List<EmployeeResponse> employees = List.of(
                 new EmployeeResponse(
-                        UUID.fromString(TEST_UUID_STR), "Jane Doe", 160_000, 30, "Engineering Manager", "jane.doe@gmail.com"),
+                        UUID.fromString(TEST_UUID_STR),
+                        "Jane Doe",
+                        160_000,
+                        30,
+                        "Engineering Manager",
+                        "jane.doe@gmail.com"),
                 new EmployeeResponse(
                         UUID.randomUUID(), "John Smith", 160_000, 30, "Engineering Manager", "john.smith@gmail.com"));
 
@@ -91,10 +94,8 @@ class EmployeeServiceTest {
     @Test
     public void testSelectiveCacheEvictOnEmployeeDelete() {
 
-
         final List<EmployeeResponse> firstFilterResponse = employeeService.getEmployeesByNameSearch(FILTER_KEY);
         final List<EmployeeResponse> secondFilterResponse = employeeService.getEmployeesByNameSearch(SECOND_FILTER_KEY);
-
 
         Assertions.assertEquals(1, firstFilterResponse.size());
         Assertions.assertEquals(1, secondFilterResponse.size());
