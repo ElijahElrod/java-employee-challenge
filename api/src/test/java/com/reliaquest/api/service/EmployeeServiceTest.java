@@ -5,20 +5,22 @@ import static org.mockito.Mockito.*;
 import com.reliaquest.api.constants.CacheNames;
 import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.EmployeeResponse;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCache;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
@@ -30,6 +32,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 class EmployeeServiceTest {
 
     private static final String FILTER_KEY = "oe";
+    private static final String SECOND_FILTER_KEY = "oh";
+
     private static final String TEST_UUID_STR = "67050f6d-c2a6-4a59-be61-a8479af074ba";
     private static final EmployeeResponse EMPLOYEE_RESPONSE = new EmployeeResponse(
             UUID.fromString(TEST_UUID_STR), "Alice Barnett", 105_000, 20, "Product Manager", "alice.barnett@gmail.com");
@@ -40,17 +44,18 @@ class EmployeeServiceTest {
     @Autowired
     private CacheManager cacheManager;
 
-    @MockBean
+    @MockitoBean
     private EmployeeClient employeeClient;
 
     @BeforeEach
     public void init() {
         List<EmployeeResponse> employees = List.of(
                 new EmployeeResponse(
-                        UUID.randomUUID(), "Jane Doe", 160_000, 30, "Engineering Manager", "jane.doe@gmail.com"),
+                        UUID.fromString(TEST_UUID_STR), "Jane Doe", 160_000, 30, "Engineering Manager", "jane.doe@gmail.com"),
                 new EmployeeResponse(
                         UUID.randomUUID(), "John Smith", 160_000, 30, "Engineering Manager", "john.smith@gmail.com"));
 
+        clearInvocations(employeeClient);
         when(employeeClient.getAllEmployees()).thenReturn(employees);
     }
 
@@ -80,7 +85,31 @@ class EmployeeServiceTest {
 
         Assertions.assertEquals(1, employeeResponses.size());
         verify(employeeClient, times(1)).getAllEmployees();
-        verifyCaffeineCacheKey(CacheNames.EMPLOYEES_BY_NAME_SEARCH, FILTER_KEY, cacheManager);
+        verifyCacheKeyPresent(CacheNames.EMPLOYEES_BY_NAME_SEARCH, FILTER_KEY, cacheManager);
+    }
+
+    @Test
+    public void testSelectiveCacheEvictOnEmployeeDelete() {
+
+
+        final List<EmployeeResponse> firstFilterResponse = employeeService.getEmployeesByNameSearch(FILTER_KEY);
+        final List<EmployeeResponse> secondFilterResponse = employeeService.getEmployeesByNameSearch(SECOND_FILTER_KEY);
+
+
+        Assertions.assertEquals(1, firstFilterResponse.size());
+        Assertions.assertEquals(1, secondFilterResponse.size());
+
+        verify(employeeClient, times(2)).getAllEmployees();
+
+        verifyCacheKeyPresent(CacheNames.EMPLOYEES_BY_NAME_SEARCH, FILTER_KEY, cacheManager);
+        verifyCacheKeyPresent(CacheNames.EMPLOYEES_BY_NAME_SEARCH, SECOND_FILTER_KEY, cacheManager);
+
+        when(employeeClient.deleteEmployeeById(TEST_UUID_STR)).thenReturn(Boolean.TRUE);
+        employeeService.deleteEmployeeById(TEST_UUID_STR);
+
+        // Should only remove the cache key associated with "Jane Doe"
+        verifyCacheKeyMissing(CacheNames.EMPLOYEES_BY_NAME_SEARCH, FILTER_KEY, cacheManager);
+        verifyCacheKeyPresent(CacheNames.EMPLOYEES_BY_NAME_SEARCH, SECOND_FILTER_KEY, cacheManager);
     }
 
     @Test
@@ -99,7 +128,7 @@ class EmployeeServiceTest {
 
         Assertions.assertEquals(createdEmployee, fetchedEmployee);
         verify(employeeClient, times(1)).getEmployeeById(TEST_UUID_STR);
-        verifyCaffeineCacheKey(CacheNames.EMPLOYEE_BY_ID, TEST_UUID_STR, cacheManager);
+        verifyCacheKeyPresent(CacheNames.EMPLOYEE_BY_ID, TEST_UUID_STR, cacheManager);
     }
 
     @Test
@@ -157,12 +186,24 @@ class EmployeeServiceTest {
         Assertions.assertEquals(20_000, topSalary);
     }
 
-    private void verifyCaffeineCacheKey(String cacheName, String cacheKey, CacheManager cacheManager) {
+    private void verifyCacheKeyPresent(String cacheName, String cacheKey, CacheManager cacheManager) {
         Cache springCache = cacheManager.getCache(cacheName);
         if (springCache instanceof CaffeineCache caffeineCache) {
             com.github.benmanes.caffeine.cache.Cache<Object, Object> nativeCaffeineCache =
                     (com.github.benmanes.caffeine.cache.Cache<Object, Object>) caffeineCache.getNativeCache();
             Assertions.assertNotNull(nativeCaffeineCache.getIfPresent(cacheKey));
+        } else {
+            System.out.println("Cache '" + cacheName + "' is not a CaffeineCache.");
+            Assertions.fail();
+        }
+    }
+
+    private void verifyCacheKeyMissing(String cacheName, String cacheKey, CacheManager cacheManager) {
+        Cache springCache = cacheManager.getCache(cacheName);
+        if (springCache instanceof CaffeineCache caffeineCache) {
+            com.github.benmanes.caffeine.cache.Cache<Object, Object> nativeCaffeineCache =
+                    (com.github.benmanes.caffeine.cache.Cache<Object, Object>) caffeineCache.getNativeCache();
+            Assertions.assertNull(nativeCaffeineCache.getIfPresent(cacheKey));
         } else {
             System.out.println("Cache '" + cacheName + "' is not a CaffeineCache.");
             Assertions.fail();
