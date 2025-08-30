@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,12 +18,13 @@ import java.util.List;
  * </ul>
  * <p>
  */
-public record EmployeeResponseWrapper(@JsonDeserialize(using = SingleOrListDeserializer.class) List<EmployeeResponse> data,
-                                         String status) {
+public record EmployeeResponseWrapper(
+        @JsonDeserialize(using = SingleOrListDeserializer.class) List<EmployeeResponse> data, String status) {
 
     static class SingleOrListDeserializer extends JsonDeserializer<List<EmployeeResponse>> {
         @Override
-        public List<EmployeeResponse> deserialize(final JsonParser p, final DeserializationContext ctx) throws IOException, JsonProcessingException {
+        public List<EmployeeResponse> deserialize(final JsonParser p, final DeserializationContext ctx)
+                throws IOException, JsonProcessingException {
             final var mapper = (ObjectMapper) p.getCodec();
             final JsonNode node = mapper.readTree(p);
             final List<EmployeeResponse> list = new ArrayList<>();

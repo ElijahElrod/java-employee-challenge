@@ -2,11 +2,10 @@ package com.reliaquest.api.model.response;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.UUID;
 
 /**
  * EmployeeResponse represents the response payload for employee data.
@@ -23,7 +22,6 @@ import java.util.UUID;
  * <p>
  * Uses a custom JSON naming strategy to prefix non-id fields with "employee_".
  */
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

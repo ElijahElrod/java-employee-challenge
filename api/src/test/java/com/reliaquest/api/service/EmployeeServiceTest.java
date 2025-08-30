@@ -1,14 +1,17 @@
 package com.reliaquest.api.service;
 
+import static org.mockito.Mockito.*;
+
 import com.reliaquest.api.constants.CacheNames;
 import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.EmployeeResponse;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -18,12 +21,6 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import static org.mockito.Mockito.*;
-
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @EnableCaching
@@ -31,8 +28,8 @@ class EmployeeServiceTest {
 
     private static final String FILTER_KEY = "oe";
     private static final String TEST_UUID_STR = "67050f6d-c2a6-4a59-be61-a8479af074ba";
-    private static final EmployeeResponse EMPLOYEE_RESPONSE = new EmployeeResponse(UUID.fromString(TEST_UUID_STR), "Alice Barnett", 105_000, 20, "Product Manager", "alice.barnett@gmail.com");
-
+    private static final EmployeeResponse EMPLOYEE_RESPONSE = new EmployeeResponse(
+            UUID.fromString(TEST_UUID_STR), "Alice Barnett", 105_000, 20, "Product Manager", "alice.barnett@gmail.com");
 
     @Autowired
     private EmployeeService employeeService;
@@ -46,13 +43,13 @@ class EmployeeServiceTest {
     @BeforeEach
     public void init() {
         List<EmployeeResponse> employees = List.of(
-                new EmployeeResponse(UUID.randomUUID(), "Jane Doe", 160_000, 30, "Engineering Manager", "jane.doe@gmail.com"),
-                new EmployeeResponse(UUID.randomUUID(), "John Smith", 160_000, 30, "Engineering Manager", "john.smith@gmail.com")
-        );
+                new EmployeeResponse(
+                        UUID.randomUUID(), "Jane Doe", 160_000, 30, "Engineering Manager", "jane.doe@gmail.com"),
+                new EmployeeResponse(
+                        UUID.randomUUID(), "John Smith", 160_000, 30, "Engineering Manager", "john.smith@gmail.com"));
 
         when(employeeClient.getAllEmployees()).thenReturn(employees);
     }
-
 
     @Test
     void testGetEmployeesWithCaching() {
@@ -81,7 +78,6 @@ class EmployeeServiceTest {
         Assertions.assertEquals(1, employeeResponses.size());
         verify(employeeClient, times(1)).getAllEmployees();
         verifyCaffeineCacheKey(CacheNames.EMPLOYEES_BY_NAME_SEARCH, FILTER_KEY, cacheManager);
-
     }
 
     @Test
@@ -97,7 +93,6 @@ class EmployeeServiceTest {
 
         final var createdEmployee = employeeService.createEmployee(createEmployeeRequest);
         final var fetchedEmployee = employeeService.getEmployeeById(TEST_UUID_STR);
-
 
         Assertions.assertEquals(createdEmployee, fetchedEmployee);
         verify(employeeClient, times(1)).getEmployeeById(TEST_UUID_STR);
@@ -122,20 +117,20 @@ class EmployeeServiceTest {
         when(employeeClient.getAllEmployees()).thenReturn(employees);
         final List<String> topEarners = employeeService.getTopTenHighestEarningEmployeeNames();
 
-
         Assertions.assertEquals(10, topEarners.size());
-        Assertions.assertEquals(List.of("Employee20",
-                "Employee19",
-                "Employee18",
-                "Employee17",
-                "Employee16",
-                "Employee15",
-                "Employee14",
-                "Employee13",
-                "Employee12",
-                "Employee11"), topEarners);
-
-
+        Assertions.assertEquals(
+                List.of(
+                        "Employee20",
+                        "Employee19",
+                        "Employee18",
+                        "Employee17",
+                        "Employee16",
+                        "Employee15",
+                        "Employee14",
+                        "Employee13",
+                        "Employee12",
+                        "Employee11"),
+                topEarners);
     }
 
     @Test
@@ -170,5 +165,4 @@ class EmployeeServiceTest {
             Assertions.fail();
         }
     }
-
 }

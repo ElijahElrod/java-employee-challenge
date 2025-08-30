@@ -4,6 +4,9 @@ import com.reliaquest.api.constants.CacheNames;
 import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.EmployeeResponse;
 import jakarta.annotation.PostConstruct;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.cache.annotation.CacheEvict;
@@ -12,10 +15,6 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * EmployeeService provides business logic and caches results for employee operations.
@@ -71,12 +70,10 @@ public class EmployeeService {
     @Cacheable(CacheNames.EMPLOYEES_BY_NAME_SEARCH)
     public List<EmployeeResponse> getEmployeesByNameSearch(final String searchString) {
         final var lowerSearchStr = searchString.toLowerCase();
-        return getAllEmployees()
-                .stream()
+        return getAllEmployees().stream()
                 .filter(employee -> employee.getName().toLowerCase().contains(lowerSearchStr))
                 .toList();
     }
-
 
     /**
      * Gets the employee with the specified id.
@@ -98,9 +95,11 @@ public class EmployeeService {
     @Cacheable(CacheNames.TOP_SALARY)
     public Integer getHighestSalaryOfEmployees() {
         List<EmployeeResponse> employees = this.getAllEmployees();
-        return employees.stream().map(EmployeeResponse::getSalary).max(Integer::compareTo).orElse(0);
+        return employees.stream()
+                .map(EmployeeResponse::getSalary)
+                .max(Integer::compareTo)
+                .orElse(0);
     }
-
 
     /**
      * Queries the top ten earning employees, and returns their names.
@@ -111,9 +110,12 @@ public class EmployeeService {
     public List<String> getTopTenHighestEarningEmployeeNames() {
 
         List<EmployeeResponse> employees = this.getAllEmployees();
-        return employees.stream().sorted(Comparator.comparingInt(EmployeeResponse::getSalary).reversed()).map(EmployeeResponse::getName).limit(TEN).collect(Collectors.toList());
+        return employees.stream()
+                .sorted(Comparator.comparingInt(EmployeeResponse::getSalary).reversed())
+                .map(EmployeeResponse::getName)
+                .limit(TEN)
+                .collect(Collectors.toList());
     }
-
 
     /**
      * Creates a new employee, and adds it to the cache via the id of the {@link EmployeeResponse}. Invalidates salary-based queries as the new employee could be present for the new results.
@@ -122,13 +124,22 @@ public class EmployeeService {
      * @return a {@link EmployeeResponse}.
      */
     @Caching(
-            put = @CachePut(value = {CacheNames.EMPLOYEE_BY_ID}, key = "#result.id"),
-            evict = @CacheEvict(value = {CacheNames.EMPLOYEES, CacheNames.TOP_SALARY, CacheNames.TOP_EARNING_EMPLOYEES, CacheNames.EMPLOYEES_BY_NAME_SEARCH}, allEntries = true)
-    )
+            put =
+                    @CachePut(
+                            value = {CacheNames.EMPLOYEE_BY_ID},
+                            key = "#result.id"),
+            evict =
+                    @CacheEvict(
+                            value = {
+                                CacheNames.EMPLOYEES,
+                                CacheNames.TOP_SALARY,
+                                CacheNames.TOP_EARNING_EMPLOYEES,
+                                CacheNames.EMPLOYEES_BY_NAME_SEARCH
+                            },
+                            allEntries = true))
     public EmployeeResponse createEmployee(CreateEmployeeRequest employeeInput) {
         return employeeClient.createEmployee(employeeInput);
     }
-
 
     /**
      * Deletes the employee specified by the provided id.
@@ -142,13 +153,20 @@ public class EmployeeService {
      */
     @Caching(
             evict = {
-                    @CacheEvict(value = {CacheNames.EMPLOYEE_BY_ID}, key = "#id"),
-                    @CacheEvict(value = {CacheNames.EMPLOYEES, CacheNames.TOP_SALARY, CacheNames.TOP_EARNING_EMPLOYEES, CacheNames.EMPLOYEES_BY_NAME_SEARCH}, allEntries = true)
-            }
-    )
+                @CacheEvict(
+                        value = {CacheNames.EMPLOYEE_BY_ID},
+                        key = "#id"),
+                @CacheEvict(
+                        value = {
+                            CacheNames.EMPLOYEES,
+                            CacheNames.TOP_SALARY,
+                            CacheNames.TOP_EARNING_EMPLOYEES,
+                            CacheNames.EMPLOYEES_BY_NAME_SEARCH
+                        },
+                        allEntries = true)
+            })
     public boolean deleteEmployeeById(String id) {
 
         return employeeClient.deleteEmployeeById(id);
     }
-
 }

@@ -1,10 +1,15 @@
 package com.reliaquest.api.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import com.reliaquest.api.config.ClientConfig;
 import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.DeleteEmployeeResponseWrapper;
 import com.reliaquest.api.model.response.EmployeeResponse;
 import com.reliaquest.api.model.response.EmployeeResponseWrapper;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -16,12 +21,6 @@ import org.springframework.http.*;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 /**
  * Test cases for the {@link EmployeeClient}
  */
@@ -30,6 +29,7 @@ class EmployeeClientTest {
 
     @MockBean
     private RestTemplate restTemplate;
+
     @MockBean
     private ClientConfig clientConfig;
 
@@ -79,7 +79,12 @@ class EmployeeClientTest {
         employee.setName("Alice");
         EmployeeResponseWrapper wrapper = new EmployeeResponseWrapper(List.of(employee), "Success");
 
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(EmployeeResponseWrapper.class), eq(id)))
+        when(restTemplate.exchange(
+                        anyString(),
+                        eq(HttpMethod.GET),
+                        eq(HttpEntity.EMPTY),
+                        eq(EmployeeResponseWrapper.class),
+                        eq(id)))
                 .thenReturn(new ResponseEntity<>(wrapper, HttpStatus.OK));
 
         EmployeeResponse result = employeeClient.getEmployeeById(id);
@@ -89,7 +94,12 @@ class EmployeeClientTest {
     @Test
     void testGetEmployeeByIdReturnsBlankOnException() {
         String id = UUID.randomUUID().toString();
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), eq(HttpEntity.EMPTY), eq(EmployeeResponseWrapper.class), eq(id)))
+        when(restTemplate.exchange(
+                        anyString(),
+                        eq(HttpMethod.GET),
+                        eq(HttpEntity.EMPTY),
+                        eq(EmployeeResponseWrapper.class),
+                        eq(id)))
                 .thenThrow(mock(RestClientResponseException.class));
 
         EmployeeResponse result = employeeClient.getEmployeeById(id);
@@ -103,7 +113,8 @@ class EmployeeClientTest {
         employee.setName("Bob");
         EmployeeResponseWrapper wrapper = new EmployeeResponseWrapper(List.of(employee), "Success");
 
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(EmployeeResponseWrapper.class)))
+        when(restTemplate.exchange(
+                        anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(EmployeeResponseWrapper.class)))
                 .thenReturn(new ResponseEntity<>(wrapper, HttpStatus.CREATED));
 
         EmployeeResponse result = employeeClient.createEmployee(request);
@@ -111,7 +122,8 @@ class EmployeeClientTest {
 
         // Verify headers
         ArgumentCaptor<HttpEntity<CreateEmployeeRequest>> captor = ArgumentCaptor.forClass(HttpEntity.class);
-        verify(restTemplate).exchange(anyString(), eq(HttpMethod.POST), captor.capture(), eq(EmployeeResponseWrapper.class));
+        verify(restTemplate)
+                .exchange(anyString(), eq(HttpMethod.POST), captor.capture(), eq(EmployeeResponseWrapper.class));
         HttpHeaders headers = captor.getValue().getHeaders();
         assertEquals(MediaType.APPLICATION_JSON, headers.getContentType());
     }
@@ -119,7 +131,8 @@ class EmployeeClientTest {
     @Test
     void testCreateEmployeeReturnsBlankOnException() {
         CreateEmployeeRequest request = new CreateEmployeeRequest();
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(EmployeeResponseWrapper.class)))
+        when(restTemplate.exchange(
+                        anyString(), eq(HttpMethod.POST), any(HttpEntity.class), eq(EmployeeResponseWrapper.class)))
                 .thenThrow(mock(RestClientResponseException.class));
 
         EmployeeResponse result = employeeClient.createEmployee(request);
@@ -131,7 +144,11 @@ class EmployeeClientTest {
         String id = UUID.randomUUID().toString();
         DeleteEmployeeResponseWrapper wrapper = new DeleteEmployeeResponseWrapper(true, "Success");
 
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.DELETE), any(HttpEntity.class), eq(DeleteEmployeeResponseWrapper.class)))
+        when(restTemplate.exchange(
+                        anyString(),
+                        eq(HttpMethod.DELETE),
+                        any(HttpEntity.class),
+                        eq(DeleteEmployeeResponseWrapper.class)))
                 .thenReturn(new ResponseEntity<>(wrapper, HttpStatus.OK));
 
         boolean result = employeeClient.deleteEmployeeById(id);
@@ -141,7 +158,11 @@ class EmployeeClientTest {
     @Test
     void testDeleteEmployeeByIdReturnsFalseOnException() {
         String id = UUID.randomUUID().toString();
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.DELETE), any(HttpEntity.class), eq(DeleteEmployeeResponseWrapper.class)))
+        when(restTemplate.exchange(
+                        anyString(),
+                        eq(HttpMethod.DELETE),
+                        any(HttpEntity.class),
+                        eq(DeleteEmployeeResponseWrapper.class)))
                 .thenThrow(mock(RestClientResponseException.class));
 
         boolean result = employeeClient.deleteEmployeeById(id);

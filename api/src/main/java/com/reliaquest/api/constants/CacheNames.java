@@ -32,5 +32,4 @@ public final class CacheNames {
     public static final String EMPLOYEE_BY_ID = "employeeById";
     public static final String TOP_SALARY = "topSalary";
     public static final String TOP_EARNING_EMPLOYEES = "topEarningEmployees";
-
 }

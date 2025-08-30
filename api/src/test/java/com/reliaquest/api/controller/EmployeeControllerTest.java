@@ -1,23 +1,21 @@
 package com.reliaquest.api.controller;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.EmployeeResponse;
 import com.reliaquest.api.service.EmployeeService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 @SpringBootTest
 class EmployeeControllerTest {
@@ -37,8 +35,7 @@ class EmployeeControllerTest {
     void testGetAllEmployees() {
         List<EmployeeResponse> mockList = Arrays.asList(
                 new EmployeeResponse(UUID.randomUUID(), "Alice", 100000, 30, "Engineer", "alice@example.com"),
-                new EmployeeResponse(UUID.randomUUID(), "Bob", 90000, 28, "Analyst", "bob@example.com")
-        );
+                new EmployeeResponse(UUID.randomUUID(), "Bob", 90000, 28, "Analyst", "bob@example.com"));
         when(employeeService.getAllEmployees()).thenReturn(mockList);
 
         ResponseEntity<List<EmployeeResponse>> response = employeeController.getAllEmployees();
@@ -50,9 +47,8 @@ class EmployeeControllerTest {
     @Test
     void testGetEmployeesByNameSearch() {
         String search = "Ali";
-        List<EmployeeResponse> mockList = List.of(
-                new EmployeeResponse(UUID.randomUUID(), "Alice", 100000, 30, "Engineer", "alice@example.com")
-        );
+        List<EmployeeResponse> mockList =
+                List.of(new EmployeeResponse(UUID.randomUUID(), "Alice", 100000, 30, "Engineer", "alice@example.com"));
         when(employeeService.getEmployeesByNameSearch(search)).thenReturn(mockList);
 
         ResponseEntity<List<EmployeeResponse>> response = employeeController.getEmployeesByNameSearch(search);
@@ -112,14 +108,17 @@ class EmployeeControllerTest {
         request.setAge(30);
         request.setTitle("Engineer");
 
-        EmployeeResponse created = new EmployeeResponse(UUID.randomUUID(), "Alice", 100000, 30, "Engineer", "alice@example.com");
+        EmployeeResponse created =
+                new EmployeeResponse(UUID.randomUUID(), "Alice", 100000, 30, "Engineer", "alice@example.com");
         when(employeeService.createEmployee(any(CreateEmployeeRequest.class))).thenReturn(created);
 
         ResponseEntity<EmployeeResponse> response = employeeController.createEmployee(request);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(created, response.getBody());
-        assertTrue(Objects.requireNonNull(response.getHeaders().getLocation()).toString().endsWith(created.getId().toString()));
+        assertTrue(Objects.requireNonNull(response.getHeaders().getLocation())
+                .toString()
+                .endsWith(created.getId().toString()));
     }
 
     @Test

@@ -6,14 +6,12 @@ import com.reliaquest.api.model.response.EmployeeResponse;
 import com.reliaquest.api.service.EmployeeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.net.URI;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.net.URI;
-import java.util.List;
-
 
 /**
  * EmployeeController handles HTTP requests related to employee operations.
@@ -85,8 +83,12 @@ public class EmployeeController implements IEmployeeController<EmployeeResponse,
     @Override
     @Operation(summary = "Creates a new employee")
     public ResponseEntity<EmployeeResponse> createEmployee(CreateEmployeeRequest employeeInput) {
-        final CreateEmployeeRequest createEmployeeRequest = objectMapper.convertValue(employeeInput, CreateEmployeeRequest.class);
+        final CreateEmployeeRequest createEmployeeRequest =
+                objectMapper.convertValue(employeeInput, CreateEmployeeRequest.class);
         final EmployeeResponse createdEmployee = this.employeeService.createEmployee(createEmployeeRequest);
+        if (createdEmployee == EmployeeResponse.BLANK) {
+            return ResponseEntity.internalServerError().body(createdEmployee);
+        }
         final URI location = URI.create("/" + createdEmployee.getId());
         return ResponseEntity.created(location).body(createdEmployee);
     }

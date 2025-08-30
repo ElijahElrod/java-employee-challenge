@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestBody;
  */
 public interface IEmployeeController<Entity, Input> {
 
-
     @GetMapping()
     ResponseEntity<List<Entity>> getAllEmployees();
 

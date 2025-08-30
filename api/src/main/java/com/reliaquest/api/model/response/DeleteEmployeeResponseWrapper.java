@@ -10,5 +10,4 @@ package com.reliaquest.api.model.response;
  * </ul>
  * <p>
  */
-public record DeleteEmployeeResponseWrapper(boolean data, String status) {
-}
+public record DeleteEmployeeResponseWrapper(boolean data, String status) {}

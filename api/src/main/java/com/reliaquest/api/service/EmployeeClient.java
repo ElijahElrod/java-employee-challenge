@@ -1,14 +1,15 @@
 package com.reliaquest.api.service;
 
 import com.reliaquest.api.config.ClientConfig;
-import com.reliaquest.api.model.response.DeleteEmployeeResponseWrapper;
-import com.reliaquest.api.model.response.EmployeeResponseWrapper;
 import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.request.DeleteEmployeeRequest;
+import com.reliaquest.api.model.response.DeleteEmployeeResponseWrapper;
 import com.reliaquest.api.model.response.EmployeeResponse;
+import com.reliaquest.api.model.response.EmployeeResponseWrapper;
 import jakarta.annotation.PostConstruct;
+import java.util.Collections;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
-
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
@@ -18,9 +19,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * EmployeeClient is a wrapper for interfacing with a third-party Employee API.
@@ -62,7 +60,8 @@ public class EmployeeClient {
     public List<EmployeeResponse> getAllEmployees() {
 
         try {
-            final var apiResponse= restClient.exchange(clientConfig.getBaseUrl(), HttpMethod.GET, null, EmployeeResponseWrapper.class);
+            final var apiResponse =
+                    restClient.exchange(clientConfig.getBaseUrl(), HttpMethod.GET, null, EmployeeResponseWrapper.class);
             final var responseBody = apiResponse.getBody();
             if (responseBody == null) {
                 log.warn("Missing request body");
@@ -86,7 +85,12 @@ public class EmployeeClient {
 
         try {
 
-            final var apiResponse = restClient.exchange(clientConfig.getBaseUrl() + GET_EMPLOYEE_BY_ID, HttpMethod.GET, HttpEntity.EMPTY, EmployeeResponseWrapper.class, id);
+            final var apiResponse = restClient.exchange(
+                    clientConfig.getBaseUrl() + GET_EMPLOYEE_BY_ID,
+                    HttpMethod.GET,
+                    HttpEntity.EMPTY,
+                    EmployeeResponseWrapper.class,
+                    id);
             final var responseBody = apiResponse.getBody();
 
             if (responseBody == null) {
@@ -99,7 +103,6 @@ public class EmployeeClient {
             return EmployeeResponse.BLANK;
         }
     }
-
 
     /**
      * Creates a new employee
@@ -115,7 +118,8 @@ public class EmployeeClient {
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             final HttpEntity<CreateEmployeeRequest> createEntity = new HttpEntity<>(employeeInput, headers);
-            final var apiResponse = restClient.exchange(clientConfig.getBaseUrl(), HttpMethod.POST, createEntity, EmployeeResponseWrapper.class);
+            final var apiResponse = restClient.exchange(
+                    clientConfig.getBaseUrl(), HttpMethod.POST, createEntity, EmployeeResponseWrapper.class);
 
             final var responseBody = apiResponse.getBody();
             if (responseBody == null) {
@@ -127,9 +131,7 @@ public class EmployeeClient {
             log.error(exception.getMessage(), exception);
             return EmployeeResponse.BLANK;
         }
-
     }
-
 
     /**
      * Deletes the employee specified by the provided id
@@ -147,7 +149,8 @@ public class EmployeeClient {
             final DeleteEmployeeRequest deleteEmployeeRequest = new DeleteEmployeeRequest(employeeId);
             final HttpEntity<DeleteEmployeeRequest> deleteEntity = new HttpEntity<>(deleteEmployeeRequest, headers);
 
-            final var apiResponse = restClient.exchange(clientConfig.getBaseUrl(), HttpMethod.DELETE, deleteEntity, DeleteEmployeeResponseWrapper.class);
+            final var apiResponse = restClient.exchange(
+                    clientConfig.getBaseUrl(), HttpMethod.DELETE, deleteEntity, DeleteEmployeeResponseWrapper.class);
             final var responseBody = apiResponse.getBody();
             if (responseBody == null) {
                 return false;
@@ -159,5 +162,4 @@ public class EmployeeClient {
             return false;
         }
     }
-
 }
