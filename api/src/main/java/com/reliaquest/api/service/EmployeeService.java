@@ -53,15 +53,21 @@ public class EmployeeService {
     }
 
     /**
-     * Gets all the {}
+     * Gets all the employees.
      *
-     * @return a list containing all employees
+     * @return a collection containing all employees.
      */
     @Cacheable(CacheNames.EMPLOYEES)
     public List<EmployeeResponse> getAllEmployees() {
         return this.employeeClient.getAllEmployees();
     }
 
+    /**
+     * Gets employees matching the search string.
+     *
+     * @param searchString the search string to match on
+     * @return the collection of {@link EmployeeResponse} that matched the search string.
+     */
     @Cacheable(CacheNames.EMPLOYEES_BY_NAME_SEARCH)
     public List<EmployeeResponse> getEmployeesByNameSearch(final String searchString) {
         final var lowerSearchStr = searchString.toLowerCase();
@@ -73,10 +79,10 @@ public class EmployeeService {
 
 
     /**
-     * Gets the employe
+     * Gets the employee with the specified id.
      *
-     * @param id
-     * @return
+     * @param id the employee id.
+     * @return the {@link EmployeeResponse} object for the id.
      */
     @Cacheable(value = CacheNames.EMPLOYEE_BY_ID, key = "#id")
     public EmployeeResponse getEmployeeById(String id) {
@@ -85,7 +91,7 @@ public class EmployeeService {
     }
 
     /**
-     * Returns the highest salary of employees
+     * Returns the highest salary of employees.
      *
      * @return the highest employee salary, or 0 if no employee entries are present.
      */
@@ -96,6 +102,11 @@ public class EmployeeService {
     }
 
 
+    /**
+     * Queries the top ten earning employees, and returns their names.
+     *
+     * @return a collection of the top ten earning employee's names
+     */
     @Cacheable(CacheNames.TOP_EARNING_EMPLOYEES)
     public List<String> getTopTenHighestEarningEmployeeNames() {
 
@@ -108,7 +119,7 @@ public class EmployeeService {
      * Creates a new employee, and adds it to the cache via the id of the {@link EmployeeResponse}. Invalidates salary-based queries as the new employee could be present for the new results.
      *
      * @param employeeInput The employee object to create
-     * @return a {@link EmployeeResponse}
+     * @return a {@link EmployeeResponse}.
      */
     @Caching(
             put = @CachePut(value = {CacheNames.EMPLOYEE_BY_ID}, key = "#result.id"),
@@ -120,7 +131,11 @@ public class EmployeeService {
 
 
     /**
-     * Deletes the employee specified by the provided id
+     * Deletes the employee specified by the provided id.
+     * <p>
+     * Invalidates {@link CacheNames#EMPLOYEE_BY_ID}, {@link CacheNames#EMPLOYEES}, {@link CacheNames#TOP_SALARY}, {@link CacheNames#TOP_EARNING_EMPLOYEES},
+     * {@link CacheNames#EMPLOYEES_BY_NAME_SEARCH}.
+     * </p>
      *
      * @param id The id for the employee object to delete
      * @return true if delete was successful, false otherwise

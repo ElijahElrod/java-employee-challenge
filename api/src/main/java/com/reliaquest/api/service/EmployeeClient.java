@@ -21,7 +21,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * EmployeeClient is a wrapper for interfacing with a third-party Employee API.
@@ -31,7 +30,7 @@ import java.util.Objects;
  *     <li>Retrieve all employees via {@link #getAllEmployees()}</li>
  *     <li>Get an employee by ID via {@link #getEmployeeById(String)}</li>
  *     <li>Create a new employee via {@link #createEmployee(CreateEmployeeRequest)}</li>
- *     <li>Delete an employee by ID via {@link #deleteEmployee(String)}</li>
+ *     <li>Delete an employee by ID via {@link #deleteEmployeeById(String)}</li>
  * </ul>
  * <p>
  * Uses {@link RestTemplate} for HTTP requests and handles response mapping and error logging.

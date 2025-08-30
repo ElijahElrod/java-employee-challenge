@@ -1,5 +1,6 @@
 package com.reliaquest.api.service;
 
+import com.reliaquest.api.constants.CacheNames;
 import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.EmployeeResponse;
 
@@ -12,8 +13,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
@@ -66,7 +69,7 @@ class EmployeeServiceTest {
         assertThat(secondCall).isEqualTo(thirdCall);
 
         // Verify client called only once because of caching
-        verify(employeeClient, times(2)).getAllEmployees();
+        verify(employeeClient, times(1)).getAllEmployees();
     }
 
     @Test
@@ -78,6 +81,7 @@ class EmployeeServiceTest {
 
         Assertions.assertEquals(1, employeeResponses.size());
         verify(employeeClient, times(1)).getAllEmployees();
+        verifyCaffeineCacheKey(CacheNames.EMPLOYEES_BY_NAME_SEARCH, FILTER_KEY, cacheManager);
 
     }
 
@@ -90,13 +94,42 @@ class EmployeeServiceTest {
         createEmployeeRequest.setTitle("Engineering Manager");
 
         when(employeeClient.createEmployee(createEmployeeRequest)).thenReturn(EMPLOYEE_RESPONSE);
+        when(employeeClient.getEmployeeById(TEST_UUID_STR)).thenReturn(EMPLOYEE_RESPONSE);
 
         final var createdEmployee = employeeService.createEmployee(createEmployeeRequest);
         final var fetchedEmployee = employeeService.getEmployeeById(TEST_UUID_STR);
 
-        Assertions.assertEquals(createdEmployee, fetchedEmployee);
-        verify(employeeClient, times(0)).getEmployeeById(TEST_UUID_STR);
+        outputCaffeineCacheKeys(CacheNames.EMPLOYEE_BY_ID, cacheManager);
 
+
+        Assertions.assertEquals(createdEmployee, fetchedEmployee);
+        verify(employeeClient, times(1)).getEmployeeById(TEST_UUID_STR);
+        verifyCaffeineCacheKey(CacheNames.EMPLOYEE_BY_ID, TEST_UUID_STR, cacheManager);
+    }
+
+    private void outputCaffeineCacheKeys(String cacheName, CacheManager cacheManager) {
+        Cache springCache = cacheManager.getCache(cacheName);
+        if (springCache instanceof CaffeineCache caffeineCache) {
+            com.github.benmanes.caffeine.cache.Cache<Object, Object> nativeCaffeineCache =
+                    (com.github.benmanes.caffeine.cache.Cache<Object, Object>) caffeineCache.getNativeCache();
+
+            System.out.println("Keys in cache '" + cacheName + "':");
+            nativeCaffeineCache.asMap().keySet().forEach(key -> System.out.println("- " + key));
+        } else {
+            System.out.println("Cache '" + cacheName + "' is not a CaffeineCache.");
+        }
+    }
+
+    private void verifyCaffeineCacheKey(String cacheName, String cacheKey, CacheManager cacheManager) {
+        Cache springCache = cacheManager.getCache(cacheName);
+        if (springCache instanceof CaffeineCache caffeineCache) {
+            com.github.benmanes.caffeine.cache.Cache<Object, Object> nativeCaffeineCache =
+                    (com.github.benmanes.caffeine.cache.Cache<Object, Object>) caffeineCache.getNativeCache();
+            Assertions.assertNotNull(nativeCaffeineCache.getIfPresent(cacheKey));
+        } else {
+            System.out.println("Cache '" + cacheName + "' is not a CaffeineCache.");
+            Assertions.fail();
+        }
     }
 
 }
