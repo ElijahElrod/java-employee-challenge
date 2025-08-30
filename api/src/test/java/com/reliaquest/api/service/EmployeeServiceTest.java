@@ -21,6 +21,9 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+/**
+ * Unit tests for {@link EmployeeService}
+ */
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @EnableCaching

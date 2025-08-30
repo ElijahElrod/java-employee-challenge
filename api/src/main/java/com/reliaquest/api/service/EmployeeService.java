@@ -4,8 +4,8 @@ import com.reliaquest.api.constants.CacheNames;
 import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.EmployeeResponse;
 import jakarta.annotation.PostConstruct;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -37,11 +37,15 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class EmployeeService {
 
-    public static final int TEN = 10;
+    private static final int TEN = 10;
+    private static final int NO_SALARY = 0;
     private final EmployeeClient employeeClient;
+    private final EmployeeSearchCacheEvictionService employeeSearchCacheEvictionService;
+
+    private final ConcurrentHashMap<UUID, Set<String>> employeeToSearchStrings = new ConcurrentHashMap<>();
 
     @PostConstruct
-    @Profile("production")
+    @Profile("!test")
     public void warmupCache() {
         try {
             final var initialEmployees = getAllEmployees();
@@ -70,9 +74,16 @@ public class EmployeeService {
     @Cacheable(CacheNames.EMPLOYEES_BY_NAME_SEARCH)
     public List<EmployeeResponse> getEmployeesByNameSearch(final String searchString) {
         final var lowerSearchStr = searchString.toLowerCase();
-        return getAllEmployees().stream()
+        final var matchedEmployees = getAllEmployees().stream()
                 .filter(employee -> employee.getName().toLowerCase().contains(lowerSearchStr))
                 .toList();
+
+        // Build reverse index to evict entries more efficiently than dropping entire cache
+        for (final var employee : matchedEmployees) {
+            employeeToSearchStrings.putIfAbsent(employee.getId(), ConcurrentHashMap.newKeySet());
+            employeeToSearchStrings.get(employee.getId()).add(searchString);
+        }
+        return matchedEmployees;
     }
 
     /**
@@ -98,7 +109,7 @@ public class EmployeeService {
         return employees.stream()
                 .map(EmployeeResponse::getSalary)
                 .max(Integer::compareTo)
-                .orElse(0);
+                .orElse(NO_SALARY);
     }
 
     /**
@@ -145,7 +156,7 @@ public class EmployeeService {
      * Deletes the employee specified by the provided id.
      * <p>
      * Invalidates {@link CacheNames#EMPLOYEE_BY_ID}, {@link CacheNames#EMPLOYEES}, {@link CacheNames#TOP_SALARY}, {@link CacheNames#TOP_EARNING_EMPLOYEES},
-     * {@link CacheNames#EMPLOYEES_BY_NAME_SEARCH}.
+     * and specific {@link CacheNames#EMPLOYEES_BY_NAME_SEARCH} entries using {@link EmployeeService#employeeToSearchStrings} & {@link EmployeeSearchCacheEvictionService}.
      * </p>
      *
      * @param id The id for the employee object to delete
@@ -161,12 +172,18 @@ public class EmployeeService {
                             CacheNames.EMPLOYEES,
                             CacheNames.TOP_SALARY,
                             CacheNames.TOP_EARNING_EMPLOYEES,
-                            CacheNames.EMPLOYEES_BY_NAME_SEARCH
                         },
                         allEntries = true)
             })
     public boolean deleteEmployeeById(String id) {
-
-        return employeeClient.deleteEmployeeById(id);
+        final var deleted = employeeClient.deleteEmployeeById(id);
+        if (deleted) {
+            // Evict specific cached search entries attached to the employee being deleted
+            final UUID employeeUuid = UUID.fromString(id);
+            final Set<String> searchStringsToEvict =
+                    employeeToSearchStrings.getOrDefault(employeeUuid, Collections.emptySet());
+            employeeSearchCacheEvictionService.evictEmployeeFragmentsByUUID(searchStringsToEvict);
+        }
+        return deleted;
     }
 }

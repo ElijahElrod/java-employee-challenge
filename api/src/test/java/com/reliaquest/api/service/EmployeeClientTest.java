@@ -13,27 +13,20 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * Test cases for the {@link EmployeeClient}
+ * Unit Test cases for the {@link EmployeeClient}
  */
 @SpringBootTest
 class EmployeeClientTest {
 
-    @MockBean
     private RestTemplate restTemplate;
-
-    @MockBean
     private ClientConfig clientConfig;
-
-    @InjectMocks
     private EmployeeClient employeeClient;
 
     @BeforeEach

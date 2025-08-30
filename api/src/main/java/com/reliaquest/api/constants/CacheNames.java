@@ -32,4 +32,8 @@ public final class CacheNames {
     public static final String EMPLOYEE_BY_ID = "employeeById";
     public static final String TOP_SALARY = "topSalary";
     public static final String TOP_EARNING_EMPLOYEES = "topEarningEmployees";
+
+    public static final String FRAGMENTS_BY_EMPLOYEE = "employeeToFragments";
+
+    // todo: add cache mechanism for evicting name search fragments
 }
