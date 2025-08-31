@@ -1,11 +1,13 @@
 package com.reliaquest.api.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 import com.reliaquest.api.constants.CacheNames;
 import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.EmployeeResponse;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -63,7 +65,7 @@ class EmployeeServiceTest {
     }
 
     @Test
-    void testGetEmployeesWithCaching() {
+    public void testGetEmployeesWithCaching() {
 
         // First call -> goes to client
         List<EmployeeResponse> firstCall = employeeService.getAllEmployees();
@@ -72,8 +74,8 @@ class EmployeeServiceTest {
         List<EmployeeResponse> secondCall = employeeService.getAllEmployees();
         List<EmployeeResponse> thirdCall = employeeService.getAllEmployees();
 
-        Assertions.assertEquals(firstCall, secondCall);
-        Assertions.assertEquals(secondCall, thirdCall);
+        assertEquals(firstCall, secondCall);
+        assertEquals(secondCall, thirdCall);
 
         // Verify client called only once because of caching
         verify(employeeClient, times(1)).getAllEmployees();
@@ -86,7 +88,7 @@ class EmployeeServiceTest {
         // Should be Cache Hit Now, no sub-call to getAllEmployees
         List<EmployeeResponse> employeeResponses = employeeService.getEmployeesByNameSearch(FILTER_KEY);
 
-        Assertions.assertEquals(1, employeeResponses.size());
+        assertEquals(1, employeeResponses.size());
         verify(employeeClient, times(1)).getAllEmployees();
         verifyCacheKeyPresent(CacheNames.EMPLOYEES_BY_NAME_SEARCH, FILTER_KEY, cacheManager);
     }
@@ -97,8 +99,8 @@ class EmployeeServiceTest {
         final List<EmployeeResponse> firstFilterResponse = employeeService.getEmployeesByNameSearch(FILTER_KEY);
         final List<EmployeeResponse> secondFilterResponse = employeeService.getEmployeesByNameSearch(SECOND_FILTER_KEY);
 
-        Assertions.assertEquals(1, firstFilterResponse.size());
-        Assertions.assertEquals(1, secondFilterResponse.size());
+        assertEquals(1, firstFilterResponse.size());
+        assertEquals(1, secondFilterResponse.size());
 
         verify(employeeClient, times(2)).getAllEmployees();
 
@@ -129,12 +131,12 @@ class EmployeeServiceTest {
         final var createdEmployee = employeeService.createEmployee(createEmployeeRequest);
         final var fetchedEmployee = employeeService.getEmployeeById(TEST_UUID_STR);
 
-        Assertions.assertEquals(createdEmployee, fetchedEmployee);
+        assertEquals(createdEmployee, fetchedEmployee);
         verifyCacheKeyPresent(CacheNames.EMPLOYEE_BY_ID, TEST_UUID_STR, cacheManager);
     }
 
     @Test
-    void testGetTopTenEarningEmployees() {
+    public void testGetTopTenEarningEmployees() {
         // given
         List<EmployeeResponse> employees = new ArrayList<>();
         for (int i = 1; i <= 20; i++) {
@@ -151,8 +153,8 @@ class EmployeeServiceTest {
         when(employeeClient.getAllEmployees()).thenReturn(employees);
         final List<String> topEarners = employeeService.getTopTenHighestEarningEmployeeNames();
 
-        Assertions.assertEquals(10, topEarners.size());
-        Assertions.assertEquals(
+        assertEquals(10, topEarners.size());
+        assertEquals(
                 List.of(
                         "Employee20",
                         "Employee19",
@@ -168,7 +170,7 @@ class EmployeeServiceTest {
     }
 
     @Test
-    void testGetHighestSalary() {
+    public void testGetHighestSalary() {
         // given
         List<EmployeeResponse> employees = new ArrayList<>();
         for (int i = 1; i <= 20; i++) {
@@ -185,7 +187,23 @@ class EmployeeServiceTest {
         when(employeeClient.getAllEmployees()).thenReturn(employees);
         final int topSalary = employeeService.getHighestSalaryOfEmployees();
 
-        Assertions.assertEquals(20_000, topSalary);
+        assertEquals(20_000, topSalary);
+    }
+
+    @Test
+    public void testDeleteEmployeeByIdAndNoMatchReturnsEmpty() {
+        when(employeeService.getEmployeesByNameSearch("notfound")).thenReturn(Collections.emptyList());
+        String result = employeeService.deleteEmployeeById("notfound");
+        assertEquals("", result);
+    }
+
+    @Test
+    public void testDeleteEmployeeById() {
+        when(employeeClient.deleteEmployeeById("Alice Barnett")).thenReturn(Boolean.FALSE);
+        when(employeeService.getEmployeesByNameSearch("Alice Barnett")).thenReturn(List.of(EMPLOYEE_RESPONSE));
+
+        final var result = employeeService.deleteEmployeeById("Alice Barnett");
+        assertEquals("", result);
     }
 
     private void verifyCacheKeyPresent(String cacheName, String cacheKey, CacheManager cacheManager) {
