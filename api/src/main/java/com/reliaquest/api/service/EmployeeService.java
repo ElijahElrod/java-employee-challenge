@@ -5,9 +5,11 @@ import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.EmployeeResponse;
 import com.reliaquest.api.util.UuidValidator;
 import jakarta.annotation.PostConstruct;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.cache.annotation.CacheEvict;
@@ -43,9 +45,11 @@ public class EmployeeService {
     private static final int NO_SALARY = 0;
     private final EmployeeClient employeeClient;
     private final EmployeeSearchCacheEvictionService employeeSearchCacheEvictionService;
-
     private final ConcurrentHashMap<UUID, Set<String>> employeeToSearchStrings = new ConcurrentHashMap<>();
 
+    /**
+     * Attempts to warm {@link CacheNames#EMPLOYEES} on startup
+     */
     @PostConstruct
     @Profile("!test")
     public void warmupCache() {
@@ -142,56 +146,58 @@ public class EmployeeService {
      */
     @Caching(
             put =
-                    @CachePut(
-                            value = {CacheNames.EMPLOYEE_BY_ID},
-                            key = "#result.id"),
+            @CachePut(
+                    value = {CacheNames.EMPLOYEE_BY_ID},
+                    key = "#result.id",
+                    condition = "#result != null && #result.id != null"
+            ),
             evict =
-                    @CacheEvict(
-                            value = {
-                                CacheNames.EMPLOYEES,
-                                CacheNames.TOP_SALARY,
-                                CacheNames.TOP_EARNING_EMPLOYEES,
-                                CacheNames.EMPLOYEES_BY_NAME_SEARCH
-                            },
-                            allEntries = true))
+            @CacheEvict(
+                    value = {
+                            CacheNames.EMPLOYEES,
+                            CacheNames.TOP_SALARY,
+                            CacheNames.TOP_EARNING_EMPLOYEES,
+                            CacheNames.EMPLOYEES_BY_NAME_SEARCH
+                    },
+                    allEntries = true))
     public EmployeeResponse createEmployee(CreateEmployeeRequest employeeInput) {
         return employeeClient.createEmployee(employeeInput);
     }
 
     /**
-     * Deletes the employee specified by the provided id.
+     * Deletes the employee specified by the provided name as id.
      * <p>
      * Invalidates {@link CacheNames#EMPLOYEE_BY_ID}, {@link CacheNames#EMPLOYEES}, {@link CacheNames#TOP_SALARY}, {@link CacheNames#TOP_EARNING_EMPLOYEES},
      * and specific {@link CacheNames#EMPLOYEES_BY_NAME_SEARCH} entries using {@link EmployeeService#employeeToSearchStrings} & {@link EmployeeSearchCacheEvictionService}.
      * </p>
      *
      * @param name The name as the id for the employee object to delete
-     * @return the name of the employee deleted, {@link #EMPTY} otherwise
+     * @return the name of the employee deleted or if not present, {@link #EMPTY} otherwise
      */
     @Caching(
             evict = {
-                @CacheEvict(
-                        value = {CacheNames.EMPLOYEE_BY_ID},
-                        key = "#employee.id",
-                        condition = "#employee != null"),
-                @CacheEvict(
-                        value = {
-                            CacheNames.EMPLOYEES,
-                            CacheNames.TOP_SALARY,
-                            CacheNames.TOP_EARNING_EMPLOYEES,
-                        },
-                        allEntries = true)
+                    @CacheEvict(
+                            value = {CacheNames.EMPLOYEE_BY_ID},
+                            key = "#employee.id",
+                            condition = "#employee != null"),
+                    @CacheEvict(
+                            value = {
+                                    CacheNames.EMPLOYEES,
+                                    CacheNames.TOP_SALARY,
+                                    CacheNames.TOP_EARNING_EMPLOYEES,
+                            },
+                            allEntries = true)
             })
     public String deleteEmployeeById(String name) {
 
         final var matchedEmployees = getEmployeesByNameSearch(name);
         if (matchedEmployees.isEmpty()) {
-            return name;
+            return EMPTY;
         }
 
         final var employee = matchedEmployees.get(0);
         if (employee == null) {
-            return name;
+            return EMPTY;
         }
 
         final var deleted = employeeClient.deleteEmployeeById(name);

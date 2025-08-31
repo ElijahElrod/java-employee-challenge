@@ -12,7 +12,7 @@ public class UuidValidator {
     /**
      * Validates if the passed id is a valid UUID.
      *
-     * @param id the id to validate as an UUID
+     * @param id the id to validate as a UUID
      * @return true if valid UUID, false otherwise
      */
     public static boolean isValidUuid(final String id) {
