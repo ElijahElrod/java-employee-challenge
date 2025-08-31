@@ -111,7 +111,7 @@ public class EmployeeService {
      *
      * @return the highest employee salary, or 0 if no employee entries are present.
      */
-    @Cacheable(CacheNames.TOP_SALARY)
+    @Cacheable(value = CacheNames.TOP_SALARY, unless = "#result == 0")
     public Integer getHighestSalaryOfEmployees() {
 
         return getAllEmployees().stream()
@@ -125,11 +125,10 @@ public class EmployeeService {
      *
      * @return a collection of the top ten earning employee's names
      */
-    @Cacheable(CacheNames.TOP_EARNING_EMPLOYEES)
+    @Cacheable(value = CacheNames.TOP_EARNING_EMPLOYEES, unless = "#result == null || #result.isEmpty()")
     public List<String> getTopTenHighestEarningEmployeeNames() {
 
-        List<EmployeeResponse> employees = this.getAllEmployees();
-        return employees.stream()
+        return getAllEmployees().stream()
                 .sorted(Comparator.comparingInt(EmployeeResponse::getSalary).reversed())
                 .map(EmployeeResponse::getName)
                 .limit(TEN)
