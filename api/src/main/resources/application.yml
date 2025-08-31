@@ -4,3 +4,4 @@ api.employee.base-url: http://localhost:8112/api/v1/employee
 springdoc.api-docs.path: /v3/api-docs
 springdoc.api-docs.version: OPENAPI_3_1
 springdoc.swagger-ui.path: /swagger-ui.html
+springdoc.show-actuator: true

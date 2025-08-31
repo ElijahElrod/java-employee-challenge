@@ -38,6 +38,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class EmployeeService {
 
+    private static final String EMPTY = "";
     private static final int TEN = 10;
     private static final int NO_SALARY = 0;
     private final EmployeeClient employeeClient;
@@ -164,8 +165,8 @@ public class EmployeeService {
      * and specific {@link CacheNames#EMPLOYEES_BY_NAME_SEARCH} entries using {@link EmployeeService#employeeToSearchStrings} & {@link EmployeeSearchCacheEvictionService}.
      * </p>
      *
-     * @param id The id for the employee object to delete
-     * @return true if delete was successful, false otherwise
+     * @param name The name as the id for the employee object to delete
+     * @return the name of the employee deleted, {@link #EMPTY} otherwise
      */
     @Caching(
             evict = {
@@ -181,25 +182,27 @@ public class EmployeeService {
                         },
                         allEntries = true)
             })
-    public boolean deleteEmployeeById(String name) {
+    public String deleteEmployeeById(String name) {
 
         final var matchedEmployees = getEmployeesByNameSearch(name);
         if (matchedEmployees.isEmpty()) {
-            return true;
+            return name;
         }
 
         final var employee = matchedEmployees.get(0);
         if (employee == null) {
-            return true;
+            return name;
         }
 
         final var deleted = employeeClient.deleteEmployeeById(name);
-        if (deleted) {
-            // Evict specific cached search entries attached to the employee being deleted
-            final Set<String> searchStringsToEvict =
-                    employeeToSearchStrings.getOrDefault(employee.getId(), Collections.emptySet());
-            employeeSearchCacheEvictionService.evictEmployeeFragmentsByUUID(searchStringsToEvict);
+        if (!deleted) {
+            return EMPTY;
         }
-        return deleted;
+
+        // Evict specific cached search entries attached to the employee being deleted
+        final Set<String> searchStringsToEvict =
+                employeeToSearchStrings.getOrDefault(employee.getId(), Collections.emptySet());
+        employeeSearchCacheEvictionService.evictEmployeeFragmentsByUUID(searchStringsToEvict);
+        return name;
     }
 }

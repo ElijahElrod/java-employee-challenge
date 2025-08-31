@@ -71,7 +71,7 @@ class EmployeeControllerTest {
 
     @Test
     void testGetEmployeeByIdNotFound() {
-        when(employeeService.getEmployeeById("notfound")).thenReturn(null);
+        when(employeeService.getEmployeeById("notfound")).thenReturn(EmployeeResponse.BLANK);
 
         ResponseEntity<EmployeeResponse> response = employeeController.getEmployeeById("notfound");
 
@@ -123,17 +123,17 @@ class EmployeeControllerTest {
 
     @Test
     void testDeleteEmployeeByIdSuccess() {
-        when(employeeService.deleteEmployeeById("123")).thenReturn(true);
+        when(employeeService.deleteEmployeeById("123")).thenReturn("123");
 
         ResponseEntity<String> response = employeeController.deleteEmployeeById("123");
 
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        assertNull(response.getBody());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("123", response.getBody());
     }
 
     @Test
     void testDeleteEmployeeByIdFailure() {
-        when(employeeService.deleteEmployeeById("123")).thenReturn(false);
+        when(employeeService.deleteEmployeeById("123")).thenReturn("");
 
         ResponseEntity<String> response = employeeController.deleteEmployeeById("123");
 

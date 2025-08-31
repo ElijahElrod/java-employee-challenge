@@ -42,7 +42,6 @@ public class EmployeeController implements IEmployeeController<EmployeeResponse,
     @Override
     @Operation(summary = "Gets all employees")
     public ResponseEntity<List<EmployeeResponse>> getAllEmployees() {
-        log.info("Getting all employees");
         final List<EmployeeResponse> employees = this.employeeService.getAllEmployees();
         return ResponseEntity.ok(employees);
     }
@@ -50,7 +49,6 @@ public class EmployeeController implements IEmployeeController<EmployeeResponse,
     @Override
     @Operation(summary = "Gets all employees matching a search fragment i.e. 'oe' matches on 'Jane doe'")
     public ResponseEntity<List<EmployeeResponse>> getEmployeesByNameSearch(String searchString) {
-        log.info("Searching employees that match search param: [{}]", searchString);
         final List<EmployeeResponse> matchedEmployees = this.employeeService.getEmployeesByNameSearch(searchString);
         return ResponseEntity.ok(matchedEmployees);
     }
@@ -58,12 +56,11 @@ public class EmployeeController implements IEmployeeController<EmployeeResponse,
     @Override
     @Operation(summary = "Gets an employee by their id")
     public ResponseEntity<EmployeeResponse> getEmployeeById(String id) {
-        log.info("Searching employee by id: [{}]", id);
         final EmployeeResponse employeeResponse = this.employeeService.getEmployeeById(id);
-        if (employeeResponse != null) {
-            return ResponseEntity.ok(employeeResponse);
+        if (employeeResponse == EmployeeResponse.BLANK) {
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(employeeResponse);
     }
 
     @Override
@@ -94,12 +91,13 @@ public class EmployeeController implements IEmployeeController<EmployeeResponse,
     }
 
     @Override
-    @Operation(summary = "Deletes an employee by their id")
+    @Operation(summary = "Deletes an employee by their name as the id")
     public ResponseEntity<String> deleteEmployeeById(String id) {
-        if (this.employeeService.deleteEmployeeById(id)) {
-            // TODO: Maybe convert this to be an 200
-            return ResponseEntity.noContent().build();
+
+        final var deletedEmployeeName = this.employeeService.deleteEmployeeById(id);
+        if (deletedEmployeeName.isEmpty()) {
+            return ResponseEntity.internalServerError().body("Could not delete employee with id: " + id);
         }
-        return ResponseEntity.internalServerError().body("Could not delete employee with id: " + id);
+        return ResponseEntity.ok(deletedEmployeeName);
     }
 }
