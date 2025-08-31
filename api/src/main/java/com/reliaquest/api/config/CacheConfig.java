@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
  * <ul>
  *   <li>{@link #caffeineConfig()} – Configures a {@link Caffeine} builder with:
  *       <ul>
- *         <li>Entries expiring 5 seconds after write</li>
+ *         <li>Entries expiring 5 minutes after write</li>
  *         <li>Initial capacity of 100 entries</li>
  *       </ul>
  *   </li>
