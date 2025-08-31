@@ -70,7 +70,7 @@ public class EmployeeClient {
 
             return responseBody.data();
         } catch (final RestClientException exception) {
-            log.error(exception.getMessage(), exception);
+            log.warn(exception.getMessage());
             return Collections.emptyList();
         }
     }
@@ -99,7 +99,7 @@ public class EmployeeClient {
 
             return responseBody.data().get(FIRST);
         } catch (final RestClientException exception) {
-            log.error(exception.getMessage(), exception);
+            log.warn(exception.getMessage());
             return EmployeeResponse.BLANK;
         }
     }
@@ -128,7 +128,7 @@ public class EmployeeClient {
 
             return responseBody.data().get(FIRST);
         } catch (final RestClientException exception) {
-            log.error(exception.getMessage(), exception);
+            log.warn(exception.getMessage());
             return EmployeeResponse.BLANK;
         }
     }
@@ -158,7 +158,7 @@ public class EmployeeClient {
             return responseBody.data();
 
         } catch (final RestClientException exception) {
-            log.error(exception.getMessage(), exception);
+            log.warn(exception.getMessage());
             return false;
         }
     }

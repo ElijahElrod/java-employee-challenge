@@ -35,6 +35,16 @@ class EmployeeServiceTest {
     private static final String TEST_UUID_STR = "67050f6d-c2a6-4a59-be61-a8479af074ba";
     private static final EmployeeResponse EMPLOYEE_RESPONSE = new EmployeeResponse(
             UUID.fromString(TEST_UUID_STR), "Alice Barnett", 105_000, 20, "Product Manager", "alice.barnett@gmail.com");
+    private static final List<EmployeeResponse> LIST_EMPLOYEE_RESPONSE = List.of(
+            new EmployeeResponse(
+                    UUID.fromString(TEST_UUID_STR),
+                    "Jane Doe",
+                    160_000,
+                    30,
+                    "Engineering Manager",
+                    "jane.doe@gmail.com"),
+            new EmployeeResponse(
+                    UUID.randomUUID(), "John Smith", 160_000, 30, "Engineering Manager", "john.smith@gmail.com"));
 
     @Autowired
     private EmployeeService employeeService;
@@ -47,19 +57,9 @@ class EmployeeServiceTest {
 
     @BeforeEach
     public void init() {
-        List<EmployeeResponse> employees = List.of(
-                new EmployeeResponse(
-                        UUID.fromString(TEST_UUID_STR),
-                        "Jane Doe",
-                        160_000,
-                        30,
-                        "Engineering Manager",
-                        "jane.doe@gmail.com"),
-                new EmployeeResponse(
-                        UUID.randomUUID(), "John Smith", 160_000, 30, "Engineering Manager", "john.smith@gmail.com"));
 
         clearInvocations(employeeClient);
-        when(employeeClient.getAllEmployees()).thenReturn(employees);
+        when(employeeClient.getAllEmployees()).thenReturn(LIST_EMPLOYEE_RESPONSE);
     }
 
     @Test
@@ -105,8 +105,10 @@ class EmployeeServiceTest {
         verifyCacheKeyPresent(CacheNames.EMPLOYEES_BY_NAME_SEARCH, FILTER_KEY, cacheManager);
         verifyCacheKeyPresent(CacheNames.EMPLOYEES_BY_NAME_SEARCH, SECOND_FILTER_KEY, cacheManager);
 
-        when(employeeClient.deleteEmployeeById(TEST_UUID_STR)).thenReturn(Boolean.TRUE);
-        employeeService.deleteEmployeeById(TEST_UUID_STR);
+        when(employeeClient.deleteEmployeeById("Alice Barnett")).thenReturn(Boolean.TRUE);
+        when(employeeService.getEmployeesByNameSearch("Alice Barnett")).thenReturn(List.of(EMPLOYEE_RESPONSE));
+
+        employeeService.deleteEmployeeById("Alice Barnett");
 
         // Should only remove the cache key associated with "Jane Doe"
         verifyCacheKeyMissing(CacheNames.EMPLOYEES_BY_NAME_SEARCH, FILTER_KEY, cacheManager);

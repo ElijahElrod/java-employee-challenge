@@ -61,7 +61,7 @@ public class EmployeeService {
      *
      * @return a collection containing all employees.
      */
-    @Cacheable(CacheNames.EMPLOYEES)
+    @Cacheable(value = CacheNames.EMPLOYEES, unless = "#result == null || #result.isEmpty()")
     public List<EmployeeResponse> getAllEmployees() {
         return this.employeeClient.getAllEmployees();
     }
@@ -171,7 +171,8 @@ public class EmployeeService {
             evict = {
                 @CacheEvict(
                         value = {CacheNames.EMPLOYEE_BY_ID},
-                        key = "#id"),
+                        key = "#employee.id",
+                        condition = "#employee != null"),
                 @CacheEvict(
                         value = {
                             CacheNames.EMPLOYEES,
@@ -180,13 +181,23 @@ public class EmployeeService {
                         },
                         allEntries = true)
             })
-    public boolean deleteEmployeeById(String id) {
-        final var deleted = employeeClient.deleteEmployeeById(id);
+    public boolean deleteEmployeeById(String name) {
+
+        final var matchedEmployees = getEmployeesByNameSearch(name);
+        if (matchedEmployees.isEmpty()) {
+            return true;
+        }
+
+        final var employee = matchedEmployees.get(0);
+        if (employee == null) {
+            return true;
+        }
+
+        final var deleted = employeeClient.deleteEmployeeById(name);
         if (deleted) {
             // Evict specific cached search entries attached to the employee being deleted
-            final UUID employeeUuid = UUID.fromString(id);
             final Set<String> searchStringsToEvict =
-                    employeeToSearchStrings.getOrDefault(employeeUuid, Collections.emptySet());
+                    employeeToSearchStrings.getOrDefault(employee.getId(), Collections.emptySet());
             employeeSearchCacheEvictionService.evictEmployeeFragmentsByUUID(searchStringsToEvict);
         }
         return deleted;
