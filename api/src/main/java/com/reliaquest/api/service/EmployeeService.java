@@ -5,11 +5,9 @@ import com.reliaquest.api.model.request.CreateEmployeeRequest;
 import com.reliaquest.api.model.response.EmployeeResponse;
 import com.reliaquest.api.util.UuidValidator;
 import jakarta.annotation.PostConstruct;
-
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.cache.annotation.CacheEvict;
@@ -146,20 +144,19 @@ public class EmployeeService {
      */
     @Caching(
             put =
-            @CachePut(
-                    value = {CacheNames.EMPLOYEE_BY_ID},
-                    key = "#result.id",
-                    condition = "#result != null && #result.id != null"
-            ),
+                    @CachePut(
+                            value = {CacheNames.EMPLOYEE_BY_ID},
+                            key = "#result.id",
+                            condition = "#result != null && #result.id != null"),
             evict =
-            @CacheEvict(
-                    value = {
-                            CacheNames.EMPLOYEES,
-                            CacheNames.TOP_SALARY,
-                            CacheNames.TOP_EARNING_EMPLOYEES,
-                            CacheNames.EMPLOYEES_BY_NAME_SEARCH
-                    },
-                    allEntries = true))
+                    @CacheEvict(
+                            value = {
+                                CacheNames.EMPLOYEES,
+                                CacheNames.TOP_SALARY,
+                                CacheNames.TOP_EARNING_EMPLOYEES,
+                                CacheNames.EMPLOYEES_BY_NAME_SEARCH
+                            },
+                            allEntries = true))
     public EmployeeResponse createEmployee(CreateEmployeeRequest employeeInput) {
         return employeeClient.createEmployee(employeeInput);
     }
@@ -176,17 +173,17 @@ public class EmployeeService {
      */
     @Caching(
             evict = {
-                    @CacheEvict(
-                            value = {CacheNames.EMPLOYEE_BY_ID},
-                            key = "#employee.id",
-                            condition = "#employee != null"),
-                    @CacheEvict(
-                            value = {
-                                    CacheNames.EMPLOYEES,
-                                    CacheNames.TOP_SALARY,
-                                    CacheNames.TOP_EARNING_EMPLOYEES,
-                            },
-                            allEntries = true)
+                @CacheEvict(
+                        value = {CacheNames.EMPLOYEE_BY_ID},
+                        key = "#employee.id",
+                        condition = "#employee != null"),
+                @CacheEvict(
+                        value = {
+                            CacheNames.EMPLOYEES,
+                            CacheNames.TOP_SALARY,
+                            CacheNames.TOP_EARNING_EMPLOYEES,
+                        },
+                        allEntries = true)
             })
     public String deleteEmployeeById(String name) {
 
