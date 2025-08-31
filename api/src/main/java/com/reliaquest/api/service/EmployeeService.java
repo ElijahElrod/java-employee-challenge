@@ -113,8 +113,8 @@ public class EmployeeService {
      */
     @Cacheable(CacheNames.TOP_SALARY)
     public Integer getHighestSalaryOfEmployees() {
-        List<EmployeeResponse> employees = this.getAllEmployees();
-        return employees.stream()
+
+        return getAllEmployees().stream()
                 .map(EmployeeResponse::getSalary)
                 .max(Integer::compareTo)
                 .orElse(NO_SALARY);
